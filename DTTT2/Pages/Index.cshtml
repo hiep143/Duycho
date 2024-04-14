@@ -1,0 +1,82 @@
+﻿@page
+@model DTTT2.Models.IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+
+<div>
+    <h2>Nhập giá trị</h2>
+    <form id="inputForm">
+        <label for="Zin">Zin:</label>
+        <input type="number" id="Zin" name="Zin" value="@Model?.Zin" required><br>
+
+        <label for="RL">RL:</label>
+        <input type="number" id="RL" name="RL" value="@Model?.RL" required><br>
+
+        <label for="Frequency">Tần số (MHz):</label>
+        <input type="number" id="Frequency" name="Frequency" value="@Model?.Frequency" required><br>
+
+        <!-- Thêm trường chọn loại mạch -->
+        <label for="MatchingType">Loại mạch:</label>
+        <select id="MatchingType" name="MatchingType">
+            <option value="L" selected="@Model?.MatchingType == " L"">L</option>
+            <option value="Pi" selected="@Model?.MatchingType == " Pi"">Pi</option>
+            <option value="T" selected="@Model?.MatchingType == " T"">T</option>
+        </select><br>
+
+        <!-- Thêm trường radio button cho loại DC -->
+        <label for="ConnectionType">Dạng mạch:</label><br>
+        <input type="radio" id="DCFeed" name="ConnectionType" value="DC feed" checked="@Model?.ConnectionType == " DC feed"">
+        <label for="DCFeed">DC feed</label><br>
+        <input type="radio" id="DCBlock" name="ConnectionType" value="DC block" checked="@Model?.ConnectionType == " DC block"">
+        <label for="DCBlock">DC block</label><br>
+
+        <label for="QualityFactor">Quality Factor:</label>
+        <input type="number" id="QualityFactor" name="QualityFactor" value="@Model?.QualityFactor" required><br>
+
+        <button type="button" onclick="calculateImpedance()">Tính toán</button>
+    </form>
+</div>
+
+<div id="result">
+    <!-- Kết quả tính toán và hình ảnh sẽ được hiển thị ở đây -->
+</div>
+
+<script>
+    function calculateImpedance() {
+        // Lấy giá trị từ form
+        var Zin = document.getElementById("Zin").value;
+        var RL = document.getElementById("RL").value;
+        var Frequency = document.getElementById("Frequency").value;
+        var MatchingType = document.getElementById("MatchingType").value;
+        var ConnectionType = document.querySelector('input[name="ConnectionType"]:checked').value;
+        var QualityFactor = document.getElementById("QualityFactor").value;
+
+        // Gửi yêu cầu tính toán lên server bằng AJAX
+        $.ajax({
+            type: "POST",
+            url: "/Home/CalculateImpedance",
+            data: { Zin: Zin, RL: RL, Frequency: Frequency, MatchingType: MatchingType, ConnectionType: ConnectionType, QualityFactor: QualityFactor },
+            success: function (response) {
+                if (response.length > 0) {
+                    // Hiển thị kết quả tính toán ngay trong trang Index
+                    var resultHtml = "<h2>Kết quả tính toán</h2>";
+                    resultHtml += "<p>L = " + response[0] + " nH, C = " + response[1] + " pF</p>";
+                    document.getElementById("result").innerHTML = resultHtml;
+                } else {
+                    // Hiển thị thông báo lỗi nếu không có kết quả trả về
+                    document.getElementById("errorText").style.display = "block";
+                    document.getElementById("result").innerHTML = "";
+                }
+            },
+            error: function () {
+                // Xử lý lỗi nếu có
+                document.getElementById("errorText").style.display = "block";
+                document.getElementById("result").innerHTML = "";
+            }
+        });
+    }
+</script>
