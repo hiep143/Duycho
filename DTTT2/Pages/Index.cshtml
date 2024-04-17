@@ -7,6 +7,8 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
 
+</div>
+
 <div>
     <h2>Nhập giá trị</h2>
     <form id="inputForm">
@@ -66,15 +68,20 @@
                     var resultHtml = "<h2>Kết quả tính toán</h2>";
                     resultHtml += "<p>L = " + response[0] + " nH, C = " + response[1] + " pF</p>";
                     document.getElementById("result").innerHTML = resultHtml;
+
+                    // Ẩn thông báo lỗi nếu có
+                    document.getElementById("errorText").style.display = "none";
                 } else {
                     // Hiển thị thông báo lỗi nếu không có kết quả trả về
                     document.getElementById("errorText").style.display = "block";
+                    // Xóa kết quả tính toán trước đó (nếu có)
                     document.getElementById("result").innerHTML = "";
                 }
             },
             error: function () {
                 // Xử lý lỗi nếu có
                 document.getElementById("errorText").style.display = "block";
+                // Xóa kết quả tính toán trước đó (nếu có)
                 document.getElementById("result").innerHTML = "";
             }
         });

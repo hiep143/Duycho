@@ -1,4 +1,6 @@
-﻿namespace DTTT2.Models
+﻿using System;
+
+namespace DTTT2.Models
 {
     public class IndexModel
     {

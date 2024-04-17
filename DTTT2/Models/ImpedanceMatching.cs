@@ -64,12 +64,12 @@ namespace DTTT2.Models
                     else // DC block
                     {
 
-                        double L1 = Xp1 / w;
-                        double L2 = Xp2 / w;
-                        double C = 1 / (w * (Xp1 + Xp2));
+                    double L1 = Xp1 / w;
+                    double L2 = Xp2 / w;
+                    double C = 1 / (w * (Xp1 + Xp2));
 
-                        return new double[][] { new double[] { L1, L2 }, new double[] { C, C } };
-                    }
+                    return new double[][] { new double[] { L1, L2 }, new double[] { C, C } };
+                }
                 }
                 else //Zin < RL
                 {
