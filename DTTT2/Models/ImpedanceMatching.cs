@@ -1,14 +1,34 @@
 ﻿using System;
+using UnitsNet;
+using System.Numerics;
+using UnitsNet.Units;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace DTTT2.Models
 {
     public static class ImpedanceMatching
     {
-        public static double[][] CalculateImpedance(double Zin, double RL, double Frequency, string MatchingType, string ConnectionType, double QualityFactor)
+        public static double[][] CalculateImpedance(
+            double ZinValue,
+            double RLValue,
+            double FrequencyValue,
+            string MatchingType,
+            string ConnectionType,
+            double QualityFactor)
+
+    
+
+    // Tiếp tục với các tính toán cần thiết ở đây và trả về một mảng double[][] hoặc giá trị phù hợp.
+
         {
-          
+        
+            ElectricResistance Zin = ElectricResistance.FromOhms(ZinValue);
+            
+            ElectricResistance RL = ElectricResistance.FromOhms(RLValue);
+            Frequency Frequency = Frequency.FromGigahertz(FrequencyValue);
             double pi = Math.PI;
-            double w = 2 * pi * Frequency * Math.Pow(10, 6);
+            double w = Frequency.Hertz*2*pi;
+            
 
             if (MatchingType == "L")
             {
@@ -16,30 +36,35 @@ namespace DTTT2.Models
                 {
                     if (Zin > RL) // DC feed
                     {
-                        double L = RL * Math.Sqrt(Zin / RL - 1) / w;
-                        double C = Math.Sqrt(Zin / RL - 1) / (w * Zin);
-                        return new double[][] { new double[] { L }, new double[] { C } };
+                        Capacitance C = Capacitance.FromFarads(Math.Sqrt(Zin.Ohms/RL.Ohms-1)/(w*Zin.Ohms));
+                        ElectricInductance L = ElectricInductance.FromHenries((RL.Ohms/(w))*Math.Sqrt(Zin.Ohms/RL.Ohms-1));
+
+                        return new double[][] { new double[] { L.Nanohenries }, new double[] { C.Picofarads } };
                     }
                     else
                     {
-                        double L = Zin * Math.Sqrt(RL / Zin - 1) / w;
-                        double C = Math.Sqrt(RL / Zin - 1) / (w * RL);
-                        return new double[][] { new double[] { L }, new double[] { C } };
+                        double Qp = Math.Sqrt(RL.Value / Zin.Value - 1);
+                        Capacitance C = Capacitance.FromFarads(Qp / (RL.Ohms * w));
+                        Capacitance Cs = Capacitance.FromFarads((C.Farads * (Math.Pow(Qp, 2) + 1)) / Math.Pow(Qp, 2));
+                        ElectricInductance L = ElectricInductance.FromHenries(1/(Cs.Farads*Math.Pow(w,2)));
+                        return new double[][] { new double[] { L.Nanohenries }, new double[] { C.Picofarads } };
                     }
                 }
                 else // DC block
                 {
-                    if (Zin > RL)
+                    if (Zin.Value > RL.Value)
                     {
-                        double L = Zin / (w * Math.Sqrt(Zin / RL - 1));
-                        double C = 1 / (w * RL * Math.Sqrt(Zin / RL - 1));
-                        return new double[][] { new double[] { L }, new double[] { C } };
+                        Capacitance C = Capacitance.FromFarads(1/(w*RL.Ohms*Math.Sqrt(Zin.Ohms/RL.Ohms-1)));
+                        ElectricInductance L = ElectricInductance.FromHenries(Zin.Ohms/(w*Math.Sqrt(Zin.Ohms/RL.Ohms-1)));
+                        return new double[][] { new double[] { L.Nanohenries }, new double[] { C.Picofarads } };
                     }
                     else
                     {
-                        double L = RL / (w * Math.Sqrt(RL / Zin - 1));
-                        double C = 1 / (w * Zin * Math.Sqrt(RL / Zin - 1));
-                        return new double[][] { new double[] { L }, new double[] { C } };
+                        double Qp = Math.Sqrt(RL.Ohms / Zin.Ohms - 1);
+                        ElectricInductance L = ElectricInductance.FromHenries(RL.Ohms / (Qp * w * Math.PI));
+                        ElectricInductance Ls = ElectricInductance.FromHenries(L.Henries*Math.Pow(Qp, 2)/(1+Math.Pow(Qp, 2)));
+                        Capacitance C = Capacitance.FromFarads(1/(Ls.Henries*Math.Pow(w, 2)));
+                        return new double[][] { new double[] { L.Nanohenries }, new double[] { C.Picofarads } };
                     }
                 }
             }
@@ -47,99 +72,67 @@ namespace DTTT2.Models
             {
                 if (Zin > RL)
                 {
-                    double Q1 = QualityFactor;
-                    double Rv = Zin / (QualityFactor * QualityFactor + 1);
-                    double Xp1 = Zin / Q1;
-                    double Xs1 = Rv * Q1;
-                    double Q2 = Math.Sqrt(RL / Rv - 1);
-                    double Xp2 = RL / Q2;
-                    double Xs2 = Rv * Q2;
+                
                     if (ConnectionType == "DC feed")
                     {
-                        double C1 = 1 / (w * Xp1);
-                        double C2 = 1 / (w * Xp2);
-                        double L = (Xs1 + Xs2) / w;
-                        return new double[][] { new double[] { C1, C2 }, new double[] { L, L } };
+                       double Qp = Math.Sqrt(RL.Value / Zin.Value - 1);
+                        Capacitance C = Capacitance.FromFarads(Qp / (RL.Value * Frequency.Hertz * 2 * Math.PI));
+                        Capacitance Cs = Capacitance.FromFarads((C.Farads * (Math.Pow(Qp, 2) + 1)) / Math.Pow(Qp, 2));
+                        ElectricInductance L = ElectricInductance.FromHenries((Zin.Ohms+1/(2*Math.PI*Frequency.Hertz*Cs.Farads))/(2*Math.PI*Frequency.Hertz));
+                        return new double[][] { new double[] { L.Nanohenries }, new double[] { C.Picofarads } };
                     }
                     else // DC block
                     {
 
-                    double L1 = Xp1 / w;
-                    double L2 = Xp2 / w;
-                    double C = 1 / (w * (Xp1 + Xp2));
-
-                    return new double[][] { new double[] { L1, L2 }, new double[] { C, C } };
+                    double Qp = Math.Sqrt(RL.Value / Zin.Value - 1);
+                        Capacitance C = Capacitance.FromFarads(Qp / (RL.Value * Frequency.Hertz * 2 * Math.PI));
+                        Capacitance Cs = Capacitance.FromFarads((C.Farads * (Math.Pow(Qp, 2) + 1)) / Math.Pow(Qp, 2));
+                        ElectricInductance L = ElectricInductance.FromHenries((Zin.Ohms+1/(2*Math.PI*Frequency.Hertz*Cs.Farads))/(2*Math.PI*Frequency.Hertz));
+                        return new double[][] { new double[] { L.Nanohenries }, new double[] { C.Picofarads } };
                 }
                 }
                 else //Zin < RL
                 {
-                    //Tính từ tải đến trở ảo
-                    double Q2 = QualityFactor;
-                    double Rv = RL / (QualityFactor * QualityFactor + 1);
-                    double Xp2 = RL / Q2;
-                    double Xs2 = Rv * Q2;
-                    //Tính từ trở ảo đến nguồn
-                    double Q1 = Math.Sqrt(Zin / Rv - 1);
-                    double Xp1 = Zin / Q1;
-                    double Xs1 = Rv * Q1;
+                   
 
                     if (ConnectionType == "DC feed")
                     {
-                        double C1 = 1 / (w * Xp1);
-                        double C2 = 1 / (w * Xp2);
-                        double L = (Xs1 + Xs2) / w;
-                        return new double[][] { new double[] { C1, C2 }, new double[] { L, L } };
+                       double Qp = Math.Sqrt(RL.Value / Zin.Value - 1);
+                        Capacitance C = Capacitance.FromFarads(Qp / (RL.Value * Frequency.Hertz * 2 * Math.PI));
+                        Capacitance Cs = Capacitance.FromFarads((C.Farads * (Math.Pow(Qp, 2) + 1)) / Math.Pow(Qp, 2));
+                        ElectricInductance L = ElectricInductance.FromHenries((Zin.Ohms+1/(2*Math.PI*Frequency.Hertz*Cs.Farads))/(2*Math.PI*Frequency.Hertz));
+                        return new double[][] { new double[] { L.Nanohenries }, new double[] { C.Picofarads } };
                     }
                     else // DC block
                     {
 
-                        double L1 = Xp1 / w;
-                        double L2 = Xp2 / w;
-                        double C = 1 / (w * (Xp1 + Xp2));
-
-                        return new double[][] { new double[] { L1, L2 }, new double[] { C, C } };
+                        double Qp = Math.Sqrt(RL.Value / Zin.Value - 1);
+                        Capacitance C = Capacitance.FromFarads(Qp / (RL.Value * Frequency.Hertz * 2 * Math.PI));
+                        Capacitance Cs = Capacitance.FromFarads((C.Farads * (Math.Pow(Qp, 2) + 1)) / Math.Pow(Qp, 2));
+                        ElectricInductance L = ElectricInductance.FromHenries((Zin.Ohms+1/(2*Math.PI*Frequency.Hertz*Cs.Farads))/(2*Math.PI*Frequency.Hertz));
+                        return new double[][] { new double[] { L.Nanohenries }, new double[] { C.Picofarads } };
                     }
                 }
             }
             else if (MatchingType == "T")
             {
-                if (Zin < RL)
+                ElectricResistance Rv = ElectricResistance.FromOhms(Math.Min(Zin.Ohms, RL.Ohms)*(QualityFactor*QualityFactor+1));
+                double Q1 = Math.Sqrt(Rv.Ohms/Zin.Ohms-1);
+                double Q2 = Math.Sqrt(Rv.Ohms/RL.Ohms-1);
+                double Xp1 = Rv.Ohms/Q1;
+                double Xs1 = Zin.Ohms * Q1;
+                double Xp2 = Rv.Ohms/Q2;
+                double Xs2 = RL.Ohms * Q2;
+                double Xs = (Xs1 * Xs2) /(Xs1 + Xs2);
+                if (ConnectionType == "DC feed")
                 {
-                    //Tính từ nguồn đến trở ảo
-                    double Q1 = QualityFactor;
-                    double Rv = Zin * (Q1 * Q1 + 1);
-                    double Xp1 = Rv / Q1;
-                    double Xs1 = Zin * Q1;
-                    //Tính từ trở ảo đến tải
-                    double Q2 = Math.Sqrt(Rv / RL - 1);
-                    double Xp2 = Rv / Q2;
-                    double Xs2 = Q2 * RL;
-                    double Xs = (Xs1 * Xs2) / (Xs1 + Xs2);
-                    double L1 = Xp1 / w;
-                    double L2 = Xp2 / w;
-                    double C = 1 / (Xs * w);
+                    ElectricInductance L1 = ElectricInductance.FromHenries(Q1*Zin.Ohms/(2*Math.PI*Frequency.Hertz));
+                    ElectricInductance L2 = ElectricInductance.FromHenries(Xp2/(2*Math.PI*Frequency.Hertz));
+                    Capacitance C = Capacitance.FromFarads(1/(Xs*2*Math.PI*Frequency.Hertz));
+                    return new double[][] { new double[] { L1.Nanohenries, L2.Nanohenries }, new double[] { C.Picofarads } };
 
-                    return new double[][] { new double[] { L1, L2 }, new double[] { C, C } };
                 }
-                else //Zin>RL
-                {
-                    //Tính từ tải đến trở ảo
-                    double Q2 = QualityFactor;
-                    double Rv = RL * (Q2 * Q2 + 1);
-                    double Xp2 = Rv / Q2;
-                    double Xs2 = RL * Q2;
-                    //Tính từ trở ảo đến nguồn
-                    double Q1 = Math.Sqrt(Rv / Zin - 1);
-                    double Xp1 = Rv / Q1;
-                    double Xs1 = Q1 * Zin;
 
-                    double Xs = (Xs1 * Xs2) / (Xs1 + Xs2);
-                    double L1 = Xp1 / w;
-                    double L2 = Xp2 / w;
-                    double C = 1 / (Xs * w);
-
-                    return new double[][] { new double[] { L1, L2 }, new double[] { C, C } };
-                }
             }
 
 
