@@ -5,46 +5,80 @@
 }
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 
 
 </div>
 
 <div>
-    <h2>Nhập giá trị</h2>
-    <form id="inputForm">
-        <label for="Zin">Zin:</label>
-        <input type="number" id="Zin" name="Zin" value="@Model?.Zin" required><br>
-
-        <label for="RL">RL:</label>
-        <input type="number" id="RL" name="RL" value="@Model?.RL" required><br>
-
-        <label for="Frequency">Tần số (MHz):</label>
-        <input type="number" id="Frequency" name="Frequency" value="@Model?.Frequency" required><br>
-
-        <!-- Thêm trường chọn loại mạch -->
-        <label for="MatchingType">Loại mạch:</label>
-        <select id="MatchingType" name="MatchingType">
-            <option value="L" selected="@Model?.MatchingType == " L"">L</option>
-            <option value="Pi" selected="@Model?.MatchingType == " Pi"">Pi</option>
-            <option value="T" selected="@Model?.MatchingType == " T"">T</option>
-        </select><br>
-
-        <!-- Thêm trường radio button cho loại DC -->
-        <label for="ConnectionType">Dạng mạch:</label><br>
-        <input type="radio" id="DCFeed" name="ConnectionType" value="DC feed" checked="@Model?.ConnectionType == " DC feed"">
-        <label for="DCFeed">DC feed</label><br>
-        <input type="radio" id="DCBlock" name="ConnectionType" value="DC block" checked="@Model?.ConnectionType == " DC block"">
-        <label for="DCBlock">DC block</label><br>
-
-        <label for="QualityFactor">Quality Factor:</label>
-        <input type="number" id="QualityFactor" name="QualityFactor" value="@Model?.QualityFactor" required><br>
-
-        <button type="button" onclick="calculateImpedance()">Tính toán</button>
-    </form>
-</div>
-
-<div id="result">
-    <!-- Kết quả tính toán và hình ảnh sẽ được hiển thị ở đây -->
+    <div class="container mt-5">
+        <img id="matchingImage" class="border border-primary rounded" style="margin-left: 410px;" src="T_DCFEED.png" class="mx-auto d-block">
+    </div>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-lg-6">
+                <h2 class="text-center mb-3">Nhập giá trị</h2>
+                <form id="inputForm">
+                    <div class="mb-3 row">
+                        <label for="Zin" class="col-sm-2 col-form-label">Zin</label>
+                        <div class="col-sm-6">
+                            <input type="number" class="form-control" id="Zin" name="Zin" value="@Model?.Zin" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="RL" class="col-sm-2 col-form-label">RL</label>
+                        <div class="col-sm-6">
+                            <input type="number" class="form-control" id="RL" name="RL" value="@Model?.RL" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="Frequency" class="col-sm-2 col-form-label">Tần số (MHz)</label>
+                        <div class="col-sm-6">
+                            <input type="number" class="form-control" id="Frequency" name="Frequency" value="@Model?.Frequency" required>
+                        </div>
+                    </div>
+                    <!-- Thêm trường chọn loại mạch -->
+                    <label for="MatchingType">Loại mạch</label>
+                    <select id="MatchingType" name="MatchingType" class="form-select" style="width:200px" aria-label="Default select example">
+                        
+                        <option value="L" selected="@Model?.MatchingType == " L"">L</option>
+                        <option value="Pi" selected="@Model?.MatchingType == " Pi"">Pi</option>
+                        <option value="T" selected="@Model?.MatchingType == " T"">T</option>
+                    </select>
+                    <!-- Thêm trường radio button cho loại DC -->
+                    <label for=ConnectionType>Dạng mạch</label>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="radio" name="ConnectionType" id="DCFeed" value="DC feed" checked="@Model?.ConnectionType == " DC feed"">
+                        <label class="form-check-label" for="DCFeed">
+                            DC feed
+                        </label>
+                    </div>
+                    <div class="form-check align-baseline">
+                        <input class="form-check-input" type="radio" name="ConnectionType" id="DCBlock" checked="@Model?.ConnectionType == " DC block"">
+                        <label class="form-check-label" for="DCBlock">
+                            DC block
+                        </label>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="QualityFactor" class="col-sm-2 col-form-label">Quality Factor</label>
+                        <div class="col-sm-6">
+                            <input type="number" class="form-control" id="QualityFactor" name="QualityFactor" value="@Model?.QualityFactor" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="col-lg-6 text-center">
+                <h2>Kết quả</h2>
+                <button type="button" class="btn btn-success" onclick=calculateImpedance()>Tính toán</button>
+                <div id="result">
+                    <!-- Kết quả tính toán và hình ảnh sẽ được hiển thị ở đây -->
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
