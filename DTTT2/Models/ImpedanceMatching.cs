@@ -75,8 +75,7 @@ namespace DTTT2.Models
                 ElectricResistance Rv = ElectricResistance.FromOhms(Math.Max(Zin.Ohms, RL.Ohms)/(QualityFactor*QualityFactor+1));
                     double Q1 = Math.Sqrt(Zin.Ohms/Rv.Ohms-1);
                     double Q2 = Math.Sqrt(RL.Ohms/Rv.Ohms-1);
-                    double Xp1 = Zin.Ohms/Q1;
-                    double Xp2 = RL.Ohms/Q2;
+                    
 
                 if (ConnectionType == "DC feed")
                 {
@@ -89,7 +88,9 @@ namespace DTTT2.Models
                 {
                     ElectricInductance L1 = ElectricInductance.FromHenries(Zin.Ohms/(Q1*2*Math.PI*Frequency.Hertz));
                     ElectricInductance L2 = ElectricInductance.FromHenries(RL.Ohms/(Q2*2*Math.PI*Frequency.Hertz));
-                    Capacitance C = Capacitance.FromFarads(1/(w * (Xp1+Xp2)));
+                    Capacitance C1 = Capacitance.FromFarads(1/(w*Rv.Ohms*Q1));
+                    Capacitance C2 = Capacitance.FromFarads(1/(w*Rv.Ohms*Q2));
+                    Capacitance C = Capacitance.FromFarads(C1.Farads*C2.Farads/(C1.Farads+C2.Farads));
                     return new double[][] { new double[] { L1.Nanohenries, L2.Nanohenries }, new double[] { C.Picofarads } };
                 }
             }
